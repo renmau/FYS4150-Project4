@@ -17,7 +17,7 @@ using namespace arma;
 //ofstream outfile6;
 //ofstream outfile7;
 //ofstream outfile8;
-ofstream outfile9;
+//ofstream outfile9;
 
 // Creating the random initial matrix of spin-values:
 void random_init(mat &spin, double &E, double &M, int N){
@@ -126,7 +126,7 @@ void write_to_file(int N, int MCcycles, double T, vec average, int accept){
     //outfile5 << setw(15) << setprecision(8) << chi << endl;
     //outfile6 << setw(15) << setprecision(8) << Mabs_average/N/N <<endl;
     //outfile7 << setw(15) << setprecision(8) << accept/MCcycles <<endl;
-    outfile9 << setw(15) << setprecision(8) << Evariance <<endl;
+    //outfile9 << setw(15) << setprecision(8) << Evariance <<endl;
 }
 
 int main(){
@@ -139,7 +139,7 @@ int main(){
     //outfile6.open("Mabs_values_c_T1_fixed.txt");
     //outfile7.open("accepted_changes_c_T1_fixed.txt");
     //outfile8.open("Probability_d_T1_random.txt");
-    outfile9.open("Evariance_d_T1_random.txt");
+    //outfile9.open("Evariance_d_T1_random.txt");
 
     int accept;
     int max_MCcycles = 1e7;
@@ -194,7 +194,7 @@ int main(){
         //cout<<average[0]/max_MCcycles<<endl;
         //cout << accept<<endl;
 
-        write_to_file(N, max_MCcycles, T, average, accept);
+        //write_to_file(N, max_MCcycles, T, average, accept);
         //outfile8 << setw(15) << setprecision(8) << P_E <<endl;
     }
 
