@@ -100,7 +100,6 @@ void Metropolis(mat &spin, int N, double &E, double &M, int &accept, double *w){
 
         }
     }
-    //cout<<MCcount<<endl;
 
 }
 
@@ -148,7 +147,7 @@ int main(int argn, char*argv[]){
     //outfile9.open("Evariance_d_T1_random.txt");
 
     int accept;
-    int max_MCcycles = 1e3;
+    int max_MCcycles = 1e5;
     int N = 2;
 
     // temperatures in units of kT:
@@ -199,7 +198,7 @@ int main(int argn, char*argv[]){
 
         if(my_rank == 0){
             for(int i = 0; i < 5; i++)
-                cout << tot_average[i]/max_MCcycles / numprocs / N / N << endl;
+                cout << tot_average[i]/((double)(max_MCcycles * numprocs * N * N)) << endl;
             write_to_file(N, max_MCcycles, T, tot_average,accept, numprocs);
         }
 
