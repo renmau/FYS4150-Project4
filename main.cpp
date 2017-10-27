@@ -9,6 +9,14 @@
 using namespace std;
 using namespace arma;
 
+ofstream outfile1;
+ofstream outfile2;
+ofstream outfile3;
+ofstream outfile4;
+ofstream outfile5;
+ofstream outfile6;
+ofstream outfile7;
+
 // Creating the random initial matrix of spin-values:
 void random_init(mat &spin, double &E, double &M, int N){
     //srand(time(NULL));
@@ -66,6 +74,7 @@ void change_spin(mat &spin, int i, int j, int N){
 
 void Metropolis(mat &spin, int N, double &E, double &M, int &MCcount, double *w){
     for(int atoms = 0; atoms <N*N; atoms++){
+
         int i = (rand()%N)+1;
         int j = (rand()%N)+1;
         int dE = 2.0*spin(i,j)*(spin(i+1,j)+spin(i,j+1) + spin(i-1,j)+spin(i,j-1));
@@ -77,6 +86,7 @@ void Metropolis(mat &spin, int N, double &E, double &M, int &MCcount, double *w)
                 E += (double) dE;
                 M += (double) 2*spin(i,j);
                 MCcount += 1;
+
             }
         }
         else{
@@ -87,16 +97,16 @@ void Metropolis(mat &spin, int N, double &E, double &M, int &MCcount, double *w)
 
         }
     }
+    //cout<<MCcount<<endl;
+
 }
 
-void write_to_file(int N, int MCcycles, double T, vec average){
-
-    double norm = 1.0/((double)(MCcycles));
-    double E_average = average[0]*norm;
-    double E2_average = average[1]*norm;
-    double M_average = average[2]*norm;
-    double M2_average = average[3]*norm;
-    double Mabs_average = average[4]*norm;
+void write_to_file(int N, int MCcycles, double T, double E, double M,int MCcount){
+    double E_average = E;
+    double E2_average = E*E;
+    double M_average =M;
+    double M2_average = M*M;
+    double Mabs_average = fabs(M);
 
     // all expectation values are per spin, divide by N*N
 
@@ -113,35 +123,38 @@ void write_to_file(int N, int MCcycles, double T, vec average){
     outfile4 << setw(15) << setprecision(8) << M_average/N/N << endl;
     outfile5 << setw(15) << setprecision(8) << chi << endl;
     outfile6 << setw(15) << setprecision(8) << Mabs_average/N/N <<endl;
+    outfile7 << setw(15) << setprecision(8) << MCcount <<endl;
 }
 
 int main(){
 
-    outfile1.open('temperature.txt');
-    outfile2.open('E_values.txt');
-    outfile3.open('Cv_values.txt');
-    outfile4.open('M_values.txt');
-    outfile5.open('chi_values.txt');
-    outfile6.open('Mabs_values.txt');
+    outfile1.open("temperature_c.txt");
+    outfile2.open("E_values_c.txt");
+    outfile3.open("Cv_values_c.txt");
+    outfile4.open("M_values_c.txt");
+    outfile5.open("chi_values_c.txt");
+    outfile6.open("Mabs_values_c.txt");
+    outfile7.open("MCcycles_needed_c.txt");
 
-
+    int MCcount;
     int max_MCcycles = 1e5;
-    int N = 2;
+    int N = 20;
 
     // temperatures in units of kT:
-    double initial_T = 1.0;
-    double final_T = 1.0;
+    double initial_T = 1.8;
+    double final_T = 1.8+0.1;
     double step_T = 0.1;
 
     // Monte Carlo trials:
-    for (double T = initial_T; T<= final_T; T+= step_T){
+    for (double T = initial_T; T< final_T; T+= step_T){
 
         double beta = 1.0/T;
         double E = 0.;
         double M = 0.;
 
         // average vector with zeros as entry:
-        double average[5];
+        vec average(5);
+
         for(int i=0; i<5; i++) average[i] = 0.0;
 
         mat spin = zeros<mat>(N+2,N+2); // N+2 too make BCs easier
@@ -156,17 +169,22 @@ int main(){
         //double tot_average[4];
         //for(int i=0; i<=4; i++) tot_average[i] = 0.0;
 
+        MCcount = 0;
         for (int cycle =1; cycle<= max_MCcycles; cycle++){
-            int MCcount = 0;
             Metropolis(spin, N, E, M, MCcount, w);
-            average[0] += E;
-            average[1] += E*E;
-            average[2] += M;
-            average[3] += M*M;
-            average[4] += fabs(M);
-        }
+            average(0) += E;
+            average(1) += E*E;
+            average(2) += M;
+            average(3) += M*M;
+            average(4) += fabs(M);
+            write_to_file(N, max_MCcycles, T, E, M, MCcount);
 
-        //write_to_file(N, MCcycles, T, average);
+        }
+        //cout<<MCcount<<"   "<<max_MCcycles<<endl;
+        //cout<<average[0]/max_MCcycles<<endl;
+        //cout << MCcount<<endl;
+
+        //write_to_file(N, max_MCcycles, T, average, MCcount);
     }
 
 
