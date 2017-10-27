@@ -9,13 +9,15 @@
 using namespace std;
 using namespace arma;
 
-ofstream outfile1;
-ofstream outfile2;
-ofstream outfile3;
-ofstream outfile4;
-ofstream outfile5;
-ofstream outfile6;
-ofstream outfile7;
+//ofstream outfile1;
+//ofstream outfile2;
+//ofstream outfile3;
+//ofstream outfile4;
+//ofstream outfile5;
+//ofstream outfile6;
+//ofstream outfile7;
+//ofstream outfile8;
+ofstream outfile9;
 
 // Creating the random initial matrix of spin-values:
 void random_init(mat &spin, double &E, double &M, int N){
@@ -29,6 +31,7 @@ void random_init(mat &spin, double &E, double &M, int N){
             }
             else{
                 spin(i,j) = -1.;
+                //spin(i,j)= 1.;
             }
         }
     }
@@ -72,7 +75,7 @@ void change_spin(mat &spin, int i, int j, int N){
     }
 }
 
-void Metropolis(mat &spin, int N, double &E, double &M, int &MCcount, double *w){
+void Metropolis(mat &spin, int N, double &E, double &M, int &accept, double *w){
     for(int atoms = 0; atoms <N*N; atoms++){
 
         int i = (rand()%N)+1;
@@ -85,7 +88,7 @@ void Metropolis(mat &spin, int N, double &E, double &M, int &MCcount, double *w)
                 change_spin(spin,i,j,N);
                 E += (double) dE;
                 M += (double) 2*spin(i,j);
-                MCcount += 1;
+                accept += 1;
 
             }
         }
@@ -93,7 +96,7 @@ void Metropolis(mat &spin, int N, double &E, double &M, int &MCcount, double *w)
             change_spin(spin,i,j,N);
             E += (double) dE;
             M += (double) 2*spin(i,j);
-            MCcount += 1;
+            accept += 1;
 
         }
     }
@@ -101,48 +104,50 @@ void Metropolis(mat &spin, int N, double &E, double &M, int &MCcount, double *w)
 
 }
 
-void write_to_file(int N, int MCcycles, double T, double E, double M,int MCcount){
-    double E_average = E;
-    double E2_average = E*E;
-    double M_average =M;
-    double M2_average = M*M;
-    double Mabs_average = fabs(M);
-
+void write_to_file(int N, int MCcycles, double T, vec average, int accept){
+    double norm = 1.0/((double)(MCcycles));
+    double E_average = average(0)*norm;
+    double E2_average = average(1)*norm;
+    double M_average = average(2)*norm;
+    double M2_average = average(3)*norm;
+    double Mabs_average = average(4)*norm;
     // all expectation values are per spin, divide by N*N
 
     double Evariance = (E2_average - E_average*E_average)/N/N;
     double Mvariance = (M2_average - Mabs_average*Mabs_average)/N/N;
-
     double Cv = Evariance/T/T;
     double chi = Mvariance/T;
 
     //ofile << setiosflags(ios::showpoint|ios:uppercase);
-    outfile1 << setw(15) << setprecision(8) << T << endl;
-    outfile2 << setw(15) << setprecision(8) << E_average/N/N << endl;
-    outfile3 << setw(15) << setprecision(8) << Cv << endl;
-    outfile4 << setw(15) << setprecision(8) << M_average/N/N << endl;
-    outfile5 << setw(15) << setprecision(8) << chi << endl;
-    outfile6 << setw(15) << setprecision(8) << Mabs_average/N/N <<endl;
-    outfile7 << setw(15) << setprecision(8) << MCcount <<endl;
+    //outfile1 << setw(15) << setprecision(8) << T << endl;
+    //outfile2 << setw(15) << setprecision(8) << E_average/N/N << endl;
+    //outfile3 << setw(15) << setprecision(8) << Cv << endl;
+    //outfile4 << setw(15) << setprecision(8) << M_average/N/N << endl;
+    //outfile5 << setw(15) << setprecision(8) << chi << endl;
+    //outfile6 << setw(15) << setprecision(8) << Mabs_average/N/N <<endl;
+    //outfile7 << setw(15) << setprecision(8) << accept/MCcycles <<endl;
+    outfile9 << setw(15) << setprecision(8) << Evariance <<endl;
 }
 
 int main(){
 
-    outfile1.open("temperature_c.txt");
-    outfile2.open("E_values_c.txt");
-    outfile3.open("Cv_values_c.txt");
-    outfile4.open("M_values_c.txt");
-    outfile5.open("chi_values_c.txt");
-    outfile6.open("Mabs_values_c.txt");
-    outfile7.open("MCcycles_needed_c.txt");
+    //outfile1.open("temperature_c_T1_fixed.txt");
+    //outfile2.open("E_values_c_T1_fixed.txt");
+    //outfile3.open("Cv_values_c_T1_fixed.txt");
+    //outfile4.open("M_values_c_T1_fixed.txt");
+    //outfile5.open("chi_values_c_T1_fixed.txt");
+    //outfile6.open("Mabs_values_c_T1_fixed.txt");
+    //outfile7.open("accepted_changes_c_T1_fixed.txt");
+    //outfile8.open("Probability_d_T1_random.txt");
+    outfile9.open("Evariance_d_T1_random.txt");
 
-    int MCcount;
-    int max_MCcycles = 1e5;
+    int accept;
+    int max_MCcycles = 1e7;
     int N = 20;
 
     // temperatures in units of kT:
-    double initial_T = 1.8;
-    double final_T = 1.8+0.1;
+    double initial_T = 1.0;
+    double final_T = 1.0+0.1;
     double step_T = 0.1;
 
     // Monte Carlo trials:
@@ -154,7 +159,6 @@ int main(){
 
         // average vector with zeros as entry:
         vec average(5);
-
         for(int i=0; i<5; i++) average[i] = 0.0;
 
         mat spin = zeros<mat>(N+2,N+2); // N+2 too make BCs easier
@@ -169,22 +173,29 @@ int main(){
         //double tot_average[4];
         //for(int i=0; i<=4; i++) tot_average[i] = 0.0;
 
-        MCcount = 0;
+        vec P_E(1600);
+
         for (int cycle =1; cycle<= max_MCcycles; cycle++){
-            Metropolis(spin, N, E, M, MCcount, w);
+            accept = 0;
+            Metropolis(spin, N, E, M, accept, w);
             average(0) += E;
             average(1) += E*E;
             average(2) += M;
             average(3) += M*M;
             average(4) += fabs(M);
-            write_to_file(N, max_MCcycles, T, E, M, MCcount);
+
+            P_E(fabs(E+800))+=1;
+
+
+            //write_to_file(N, cycle, T, average, accept);
 
         }
-        //cout<<MCcount<<"   "<<max_MCcycles<<endl;
+        //cout<<accept<<"   "<<max_MCcycles<<endl;
         //cout<<average[0]/max_MCcycles<<endl;
-        //cout << MCcount<<endl;
+        //cout << accept<<endl;
 
-        //write_to_file(N, max_MCcycles, T, average, MCcount);
+        write_to_file(N, max_MCcycles, T, average, accept);
+        //outfile8 << setw(15) << setprecision(8) << P_E <<endl;
     }
 
 
