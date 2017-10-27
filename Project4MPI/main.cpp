@@ -4,17 +4,17 @@
 #include <fstream>
 #include <iomanip>
 #include <time.h>
-//#include <mpi.h>
+#include <mpi.h>
 
 using namespace std;
 using namespace arma;
 
-//ofstream outfile1;
-//ofstream outfile2;
-//ofstream outfile3;
+ofstream outfile1;
+ofstream outfile2;
+ofstream outfile3;
 //ofstream outfile4;
-//ofstream outfile5;
-//ofstream outfile6;
+ofstream outfile5;
+ofstream outfile6;
 //ofstream outfile7;
 //ofstream outfile8;
 //ofstream outfile9;
@@ -104,13 +104,13 @@ void Metropolis(mat &spin, int N, double &E, double &M, int &accept, double *w){
 
 }
 
-void write_to_file(int N, int MCcycles, double T, vec average, int accept){
-    double norm = 1.0/((double)(MCcycles));
-    double E_average = average(0)*norm;
-    double E2_average = average(1)*norm;
-    double M_average = average(2)*norm;
-    double M2_average = average(3)*norm;
-    double Mabs_average = average(4)*norm;
+void write_to_file(int N, int MCcycles, double T, double *average, int accept,int numprocs){
+    double norm = 1.0/((double)(MCcycles*numprocs));
+    double E_average = average[0]*norm;
+    double E2_average = average[1]*norm;
+    double M_average = average[2]*norm;
+    double M2_average = average[3]*norm;
+    double Mabs_average = average[4]*norm;
     // all expectation values are per spin, divide by N*N
 
     double Evariance = (E2_average - E_average*E_average)/N/N;
@@ -119,36 +119,42 @@ void write_to_file(int N, int MCcycles, double T, vec average, int accept){
     double chi = Mvariance/T;
 
     //ofile << setiosflags(ios::showpoint|ios:uppercase);
-    //outfile1 << setw(15) << setprecision(8) << T << endl;
-    //outfile2 << setw(15) << setprecision(8) << E_average/N/N << endl;
-    //outfile3 << setw(15) << setprecision(8) << Cv << endl;
+    outfile1 << setw(15) << setprecision(8) << T << endl;
+    outfile2 << setw(15) << setprecision(8) << E_average/N/N << endl;
+    outfile3 << setw(15) << setprecision(8) << Cv << endl;
     //outfile4 << setw(15) << setprecision(8) << M_average/N/N << endl;
-    //outfile5 << setw(15) << setprecision(8) << chi << endl;
-    //outfile6 << setw(15) << setprecision(8) << Mabs_average/N/N <<endl;
+    outfile5 << setw(15) << setprecision(8) << chi << endl;
+    outfile6 << setw(15) << setprecision(8) << Mabs_average/N/N <<endl;
     //outfile7 << setw(15) << setprecision(8) << accept/MCcycles <<endl;
     //outfile9 << setw(15) << setprecision(8) << Evariance <<endl;
 }
 
-int main(){
+int main(int argn, char*argv[]){
+    MPI_Init(&argn, &argv);
 
-    //outfile1.open("temperature_c_T1_fixed.txt");
-    //outfile2.open("E_values_c_T1_fixed.txt");
-    //outfile3.open("Cv_values_c_T1_fixed.txt");
-    //outfile4.open("M_values_c_T1_fixed.txt");
-    //outfile5.open("chi_values_c_T1_fixed.txt");
-    //outfile6.open("Mabs_values_c_T1_fixed.txt");
+    int numprocs, my_rank;
+    MPI_Comm_size (MPI_COMM_WORLD, &numprocs);
+    MPI_Comm_rank (MPI_COMM_WORLD, &my_rank);
+
+    cout << "processor " << my_rank << "of " << numprocs << endl;
+    outfile1.open("temperature_e_40.txt");
+    outfile2.open("E_values_e_40.txt");
+    outfile3.open("Cv_values_e_40.txt");
+    //outfile4.open("M_values_e_40.txt");
+    outfile5.open("chi_values_e_40.txt");
+    outfile6.open("Mabs_values_e_40.txt");
     //outfile7.open("accepted_changes_c_T1_fixed.txt");
     //outfile8.open("Probability_d_T1_random.txt");
     //outfile9.open("Evariance_d_T1_random.txt");
 
     int accept;
-    int max_MCcycles = 1e7;
+    int max_MCcycles = 1e3;
     int N = 2;
 
     // temperatures in units of kT:
     double initial_T = 1.0;
-    double final_T = 1.0+0.1;
-    double step_T = 0.1;
+    double final_T =1+0.05;
+    double step_T = 0.05;
 
     // Monte Carlo trials:
     for (double T = initial_T; T< final_T; T+= step_T){
@@ -158,8 +164,10 @@ int main(){
         double M = 0.;
 
         // average vector with zeros as entry:
-        vec average(5);
+        double average[5];
+        double tot_average[5];
         for(int i=0; i<5; i++) average[i] = 0.0;
+        for(int i=0; i<5; i++) tot_average[i] = 0.0;
 
         mat spin = zeros<mat>(N+2,N+2); // N+2 too make BCs easier
         random_init(spin,E, M, N);      // random initial spins tates
@@ -169,29 +177,34 @@ int main(){
         for(int de=-8; de<=8; de++) w[de+8]= 0;
         for(int de=-8; de<=8; de+=4) w[de+8] = exp(-beta*de);
 
-        // total average vector with zeros as entry:
-        //double tot_average[4];
-        //for(int i=0; i<=4; i++) tot_average[i] = 0.0;
-
-        vec P_E(1600);
+        //vec P_E(1600);
 
         for (int cycle =1; cycle<= max_MCcycles; cycle++){
             accept = 0;
             Metropolis(spin, N, E, M, accept, w);
-            average(0) += E;
-            average(1) += E*E;
-            average(2) += M;
-            average(3) += M*M;
-            average(4) += fabs(M);
+            average[0] += E;
+            average[1] += E*E;
+            average[2] += M;
+            average[3] += M*M;
+            average[4] += fabs(M);
 
-            P_E(fabs(E+800))+=1;
+            //P_E(fabs(E+800))+=1;
 
 
             //write_to_file(N, cycle, T, average, accept);
 
         }
+        for(int i = 0; i < 5; i++)
+            MPI_Reduce(&average[i], &tot_average[i], 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+        if(my_rank == 0){
+            for(int i = 0; i < 5; i++)
+                cout << tot_average[i]/max_MCcycles / numprocs / N / N << endl;
+            write_to_file(N, max_MCcycles, T, tot_average,accept, numprocs);
+        }
+
         //cout<<accept<<"   "<<max_MCcycles<<endl;
-        cout<<average(0)/max_MCcycles<<endl;
+        //cout<<average[0]/max_MCcycles<<endl;
         //cout << accept<<endl;
 
         //write_to_file(N, max_MCcycles, T, average, accept);
@@ -199,5 +212,5 @@ int main(){
     }
 
 
-
+    MPI_Finalize();
 }
