@@ -21,8 +21,8 @@ ofstream outfile6;
 
 // Creating the random initial matrix of spin-values:
 void random_init(mat &spin, double &E, double &M, int N){
-    //srand(time(NULL));
-    srand(78);          //make 78 a random number for each run later
+    srand(time(NULL));
+    //srand(78);          //make 78 a random number for each run later
     for (int i = 0;i<N+2;i++){
         for (int j=0;j<N+2;j++){
             int random = (rand()%2)+1;
@@ -147,13 +147,13 @@ int main(int argn, char*argv[]){
     //outfile9.open("Evariance_d_T1_random.txt");
 
     int accept;
-    int max_MCcycles = 1e5;
-    int N = 2;
+    int max_MCcycles = 1e7;
+    int N = 40;
 
     // temperatures in units of kT:
-    double initial_T = 1.0;
-    double final_T =1+0.05;
-    double step_T = 0.05;
+    double initial_T = 2.2;
+    double final_T = 2.3;
+    double step_T = 0.01;
 
     // Monte Carlo trials:
     for (double T = initial_T; T< final_T; T+= step_T){

@@ -191,8 +191,11 @@ int main(){
 
         }
         //cout<<accept<<"   "<<max_MCcycles<<endl;
-        cout<<average(0)/max_MCcycles<<endl;
+        //cout<<average(0)/max_MCcycles<<endl;
         //cout << accept<<endl;
+
+        for(int i = 0; i < 5; i++)
+            cout << average(i)/((double)(max_MCcycles*N* N)) << endl;
 
         //write_to_file(N, max_MCcycles, T, average, accept);
         //outfile8 << setw(15) << setprecision(8) << P_E <<endl;
