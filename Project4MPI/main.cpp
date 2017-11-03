@@ -136,19 +136,19 @@ int main(int argn, char*argv[]){
     MPI_Comm_rank (MPI_COMM_WORLD, &my_rank);
 
     cout << "processor " << my_rank << "of " << numprocs << endl;
-    outfile1.open("temperature_e_40.txt");
-    outfile2.open("E_values_e_40.txt");
-    outfile3.open("Cv_values_e_40.txt");
-    //outfile4.open("M_values_e_40.txt");
-    outfile5.open("chi_values_e_40.txt");
-    outfile6.open("Mabs_values_e_40.txt");
+    outfile1.open("temperature_e_100.txt");
+    outfile2.open("E_values_e_100.txt");
+    outfile3.open("Cv_values_e_100.txt");
+    //outfile4.open("M_values_e_100.txt");
+    outfile5.open("chi_values_e_100.txt");
+    outfile6.open("Mabs_values_e_100.txt");
     //outfile7.open("accepted_changes_c_T1_fixed.txt");
     //outfile8.open("Probability_d_T1_random.txt");
     //outfile9.open("Evariance_d_T1_random.txt");
 
     int accept;
     int max_MCcycles = 1e7;
-    int N = 40;
+    int N = 100;
 
     // temperatures in units of kT:
     double initial_T = 2.2;
@@ -156,7 +156,7 @@ int main(int argn, char*argv[]){
     double step_T = 0.01;
 
     // Monte Carlo trials:
-    for (double T = initial_T; T< final_T; T+= step_T){
+    for (double T = initial_T; T<= final_T; T+= step_T){
 
         double beta = 1.0/T;
         double E = 0.;
